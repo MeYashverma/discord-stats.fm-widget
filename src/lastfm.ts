@@ -189,7 +189,7 @@ async function fetchRecent(limit = 1): Promise<LastfmTrack[]> {
   return asArray(payload?.recenttracks?.track);
 }
 
-/** Optional Last.fm now-playing source. Discord presence is still preferred by default. */
+/** Last.fm now-playing source used by default in Vinyl.fm. */
 export async function fetchCurrentTrack(): Promise<CurrentTrack | null> {
   const recent = await fetchRecent(1);
   const track = recent[0];

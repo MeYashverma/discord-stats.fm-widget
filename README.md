@@ -22,8 +22,8 @@ No local machine    GitHub Actions daemon     Discord profile widget only
 This repo runs a long-lived GitHub Actions job that:
 
 1. Logs in as your Discord bot.
-2. Reads your live Spotify activity from Discord presence.
-3. Uses Last.fm for music stats and optional now-playing fallback.
+2. Reads now-playing from Last.fm by default.
+3. Optionally uses Discord Spotify presence for near-instant track changes.
 4. Corrects album art using a D.W.I.F-style image transform.
 5. Uploads corrected album art to Discord CDN through a webhook or bot channel.
 6. Builds one full Discord Dynamic Identity payload.
@@ -38,7 +38,7 @@ It is designed for one Discord account and one Last.fm profile.
 
 ## Features
 
-- 🎧 Live now-playing from Discord Spotify presence
+- 🎧 Live now-playing from Last.fm by default, with optional Discord Spotify presence mode
 - 📡 Last.fm-backed top artists, albums, tracks, scrobbles, and account stats
 - 🖼 Corrected `album_art` image output for Discord's widget frame
 - 🔁 Rotating 6-card stat pages
@@ -186,7 +186,7 @@ Full setup: [docs/widget-setup.md](docs/widget-setup.md).
 
 | API | Used for |
 | --- | --- |
-| Discord Gateway | Live Spotify presence for near-instant track changes |
+| Discord Gateway | Optional live Spotify presence for near-instant track changes |
 | Last.fm API | Top artists/albums/tracks, scrobbles, profile age, recent track fallback |
 | Discord webhook / channel messages | Hosting corrected album-art PNGs on Discord CDN |
 | Discord Profile Widget endpoint | Updating Dynamic Identity widget fields |

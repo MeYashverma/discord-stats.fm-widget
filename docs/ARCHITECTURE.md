@@ -87,16 +87,19 @@ stateDiagram-v2
     Fatal --> [*]
 ```
 
-### Presence first, Last.fm fallback
+### Now-playing source modes
 
-Discord Spotify presence gives near-instant track changes and album art without needing Spotify OAuth. Last.fm is used for rotating stats and can also serve as a fallback now-playing source when presence is unavailable.
+Vinyl.fm defaults to Last.fm now-playing to avoid requiring Discord presence setup. You can switch to Discord Spotify presence, or use auto mode.
 
 ```mermaid
 flowchart TD
-    START[Poll tick] --> PRES{Discord Spotify presence?}
+    START[Poll tick] --> SRC{NOWPLAYING_SOURCE}
+    SRC -->|lastfm| LFM[Last.fm recent nowplaying]
+    SRC -->|discord| PRES[Discord Spotify presence]
+    SRC -->|auto| PRES
     PRES -->|playing| TRACK[Use presence track]
     PRES -->|idle| IDLE[Idle widget]
-    PRES -->|unavailable| LFM[Try Last.fm recent nowplaying]
+    PRES -->|unavailable in auto| LFM
     LFM -->|track found| TRACK
     LFM -->|no nowplaying| IDLE
 ```

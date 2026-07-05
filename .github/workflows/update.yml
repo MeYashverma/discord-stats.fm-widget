@@ -56,6 +56,7 @@ jobs:
           # Optional repository variables (Settings → Secrets and variables → Actions → Variables)
           LASTFM_PROFILE_URL: ${{ vars.LASTFM_PROFILE_URL }}
           IDLE_IMAGE_URL: ${{ vars.IDLE_IMAGE_URL }}
+          NOWPLAYING_SOURCE: ${{ vars.NOWPLAYING_SOURCE || 'lastfm' }}
           POLL_SECONDS: ${{ vars.POLL_SECONDS || '5' }}
           TOPS_POLL_SECONDS: ${{ vars.TOPS_POLL_SECONDS || '60' }}
           CURRENT_TRACK_WINDOW_SECONDS: ${{ vars.CURRENT_TRACK_WINDOW_SECONDS || '300' }}

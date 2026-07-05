@@ -15,7 +15,7 @@ This guide walks through the one-time Discord, Last.fm, widget-editor, and GitHu
    - Presence Intent
    - Server Members Intent
 
-The presence intents are required so the bot can read your Spotify activity from a shared server.
+The presence intents are only required when `NOWPLAYING_SOURCE=discord` or `NOWPLAYING_SOURCE=auto`. The default `lastfm` mode works without Discord presence.
 
 ---
 
@@ -123,7 +123,8 @@ Optional repository variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `POLL_SECONDS` | `5` | Presence poll interval |
+| `NOWPLAYING_SOURCE` | `lastfm` | `lastfm`, `discord`, or `auto` |
+| `POLL_SECONDS` | `5` | Now-playing poll interval |
 | `TOPS_POLL_SECONDS` | `60` | Last.fm stat refresh interval |
 | `ROTATING_STATS` | `true` | Enable rotating bottom cards |
 | `ROTATION_INTERVAL_SECONDS` | `30` | Rotation speed |

@@ -39,6 +39,7 @@ let pageChangedAt = Date.now();
  */
 let presenceEverWorked = false;
 let lastPresenceTrack: CurrentTrack | null = null;
+let presenceUnavailableWarned = false;
 
 /**
  * Vinyl.fm — single-user Discord profile widget service.
@@ -95,7 +96,22 @@ function advancePageIfNeeded(): void {
   });
 }
 
+async function fetchLastfmNowPlaying(): Promise<CurrentTrack | null> {
+  const track = await fetchLastfmCurrentTrack();
+  if (track) {
+    logger.info("Current track from Last.fm now-playing", {
+      title: track.title,
+      artist: track.artist,
+    });
+  }
+  return track;
+}
+
 async function resolveCurrentTrack(client: Client): Promise<CurrentTrack | null> {
+  if (config.nowPlayingSource === "lastfm") {
+    return fetchLastfmNowPlaying();
+  }
+
   try {
     const presence = await fetchDiscordSpotifyTrack(client);
 
@@ -120,18 +136,23 @@ async function resolveCurrentTrack(client: Client): Promise<CurrentTrack | null>
       return lastPresenceTrack;
     }
 
-    logger.warn("Discord presence unavailable; trying Last.fm now-playing fallback", {
-      reason: presence.reason,
-    });
-    const lastfmTrack = await fetchLastfmCurrentTrack();
-    if (lastfmTrack) {
-      logger.info("Current track from Last.fm now-playing", {
-        title: lastfmTrack.title,
-        artist: lastfmTrack.artist,
-      });
-      return lastfmTrack;
+    if (config.nowPlayingSource === "discord") {
+      if (!presenceUnavailableWarned) {
+        logger.warn("Discord presence unavailable; NOWPLAYING_SOURCE=discord so Last.fm fallback is disabled", {
+          reason: presence.reason,
+        });
+        presenceUnavailableWarned = true;
+      }
+      return null;
     }
-    return null;
+
+    if (!presenceUnavailableWarned) {
+      logger.warn("Discord presence unavailable; trying Last.fm now-playing fallback", {
+        reason: presence.reason,
+      });
+      presenceUnavailableWarned = true;
+    }
+    return fetchLastfmNowPlaying();
   } catch (error) {
     logger.error("Failed to read Discord Spotify presence", {
       message: error instanceof Error ? error.message : String(error),
@@ -201,7 +222,7 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
     rotatingStats: config.rotatingStats,
     rotationIntervalSeconds: config.rotationIntervalSeconds,
     pages: STAT_PAGES.map((page) => page.title),
-    nowPlaying: "discord-spotify-presence",
+    nowPlaying: config.nowPlayingSource,
     tops: "Last.fm",
     profile: config.profileUrl,
     maxRuntimeSeconds: config.maxRuntimeSeconds,
@@ -211,7 +232,9 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
   pageChangedAt = Date.now();
 
   // Instant now-playing updates when Spotify starts, changes track, or stops.
-  client.on(Events.PresenceUpdate, (oldPresence, newPresence) => {
+  // Disabled for NOWPLAYING_SOURCE=lastfm to avoid presence warnings when you only want Last.fm.
+  if (config.nowPlayingSource !== "lastfm") {
+    client.on(Events.PresenceUpdate, (oldPresence, newPresence) => {
     if (newPresence.userId !== config.discordUserId) return;
 
     const oldTrack = spotifySyncId(oldPresence);
@@ -231,12 +254,13 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
       title: track?.title ?? "(idle)",
     });
 
-    void pollOnce(client, updater, track).catch((error: unknown) => {
-      logger.error("Presence-triggered poll failed", {
-        message: error instanceof Error ? error.message : String(error),
+      void pollOnce(client, updater, track).catch((error: unknown) => {
+        logger.error("Presence-triggered poll failed", {
+          message: error instanceof Error ? error.message : String(error),
+        });
       });
     });
-  });
+  }
 
   for (;;) {
     if (stopAt !== null && Date.now() >= stopAt) {

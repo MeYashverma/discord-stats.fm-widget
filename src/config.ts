@@ -25,6 +25,16 @@ const nonNegativeIntWithDefault = (defaultValue: number) =>
     z.coerce.number().int().nonnegative().default(defaultValue),
   );
 
+const nowPlayingSourceSchema = z.preprocess(
+  (value) => {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim().toLowerCase();
+    }
+    return "lastfm";
+  },
+  z.enum(["lastfm", "discord", "auto"]),
+);
+
 const configSchema = z.object({
   DISCORD_APP_ID: z.string().min(1, "DISCORD_APP_ID is required"),
   DISCORD_USER_ID: z.string().min(1, "DISCORD_USER_ID is required"),
@@ -46,7 +56,9 @@ const configSchema = z.object({
     }),
   LASTFM_PROFILE_URL: optionalUrl,
   IDLE_IMAGE_URL: optionalUrl,
-  // Backup poll for Discord Spotify presence.
+  // Now-playing source: lastfm (default), discord, or auto (Discord then Last.fm fallback).
+  NOWPLAYING_SOURCE: nowPlayingSourceSchema,
+  // Backup poll for now-playing.
   POLL_SECONDS: positiveIntWithDefault(5),
   // Tops change slowly; refresh less often so we can poll recent streams hard.
   TOPS_POLL_SECONDS: positiveIntWithDefault(60),
@@ -96,6 +108,7 @@ export type AppConfig = {
   discordTargetChannelId?: string;
   profileUrl: string;
   idleImageUrl?: string;
+  nowPlayingSource: "lastfm" | "discord" | "auto";
   pollSeconds: number;
   topsPollSeconds: number;
   currentTrackWindowSeconds: number;
@@ -137,6 +150,7 @@ function loadConfig(): AppConfig {
       env.LASTFM_PROFILE_URL ??
       `https://www.last.fm/user/${encodeURIComponent(env.LASTFM_USERNAME)}`,
     idleImageUrl: env.IDLE_IMAGE_URL,
+    nowPlayingSource: env.NOWPLAYING_SOURCE,
     pollSeconds: env.POLL_SECONDS,
     topsPollSeconds: env.TOPS_POLL_SECONDS,
     currentTrackWindowSeconds: env.CURRENT_TRACK_WINDOW_SECONDS,

@@ -12,7 +12,7 @@ Use this document when the workflow runs but the widget does not look right.
 | Widget shows editor defaults | Fields are not User Data or names mismatch | Re-check [widget fields](widget-setup.md) |
 | Text updates but image does not | Image field not bound to `album_art` | Set Image → User Data → `album_art` |
 | Image is square / badly clipped | Image pipeline fell back to direct URL | Check logs for D.W.I.F pipeline failure |
-| No now-playing updates | Bot cannot read presence | Enable Presence + Server Members intents and invite bot to mutual server |
+| No now-playing updates | Last.fm is not scrobbling or presence mode is misconfigured | Check Last.fm recent tracks, or fix Discord presence if using `discord`/`auto` |
 | 401 / 403 on PATCH | Discord token/app/user/auth issue | Check `DISCORD_BOT_TOKEN`, `DISCORD_APP_ID`, `DISCORD_USER_ID`, and widget authorization |
 | Last.fm stats are `-` | Last.fm key/user/API issue | Check `LASTFM_API_KEY`, `LASTFM_USERNAME`, public profile/scrobbles |
 | Workflow says operation cancelled | You manually stopped it or concurrency cancelled | Re-run workflow if needed |
@@ -76,7 +76,7 @@ Also remember that Discord does not merge partial PATCHes. This bot sends the fu
 
 ## Now-playing does not update
 
-Presence requirements:
+Discord presence requirements, only for `NOWPLAYING_SOURCE=discord` or `NOWPLAYING_SOURCE=auto`:
 
 - Bot is in at least one server with your account.
 - Discord Developer Portal → Bot → Presence Intent enabled.
