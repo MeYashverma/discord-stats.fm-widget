@@ -1,30 +1,70 @@
-# Last.fm Discord widget
+# 🎵 Discord Last.fm Profile Widget
 
-Single-user Discord bot that keeps your custom **Profile Widget** in sync with live [Last.fm](https://www.last.fm) data and Spotify now-playing from Discord presence.
+> **Cloud-hosted Last.fm + Discord Spotify Presence → Discord Dynamic Profile Widget.**
+> A single-user Discord bot that keeps your profile widget updated with live music, corrected album art, and rotating Last.fm stats — no VPS, no local PC, no frontend.
 
-**Top section** — song title, artist, album, and cover art update in real time.
+<p align="center">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22+-339933?style=for-the-badge&logo=node.js&logoColor=white">
+  <img alt="GitHub Actions" src="https://img.shields.io/badge/GitHub_Actions-cloud_daemon-2088FF?style=for-the-badge&logo=github-actions&logoColor=white">
+  <img alt="Last.fm" src="https://img.shields.io/badge/Last.fm-API-D51007?style=for-the-badge&logo=lastdotfm&logoColor=white">
+  <img alt="Discord" src="https://img.shields.io/badge/Discord-Profile_Widget-5865F2?style=for-the-badge&logo=discord&logoColor=white">
+</p>
 
-**Bottom 6 cards** — rotate through 4 stat pages every 30 seconds: Top Music, Listening Stats, Last Streamed, and Lifetime.
+```text
+No VPS              No website frontend       No database
+No local machine    GitHub Actions daemon     Discord profile widget only
+```
 
-> **Note:** This is built for one Discord account + one Last.fm profile. The Discord profile widget API is experimental and may change.
+---
+
+## What this project does
+
+This repo runs a long-lived GitHub Actions job that:
+
+1. Logs in as your Discord bot.
+2. Reads your live Spotify activity from Discord presence.
+3. Uses Last.fm for music stats and optional now-playing fallback.
+4. Corrects album art using a D.W.I.F-style image transform.
+5. Uploads corrected album art to Discord CDN through a webhook or bot channel.
+6. Builds one full Discord Dynamic Identity payload.
+7. PATCHes your Discord profile widget.
+8. Exits cleanly before GitHub's 6-hour limit and queues the next run.
+
+It is designed for one Discord account and one Last.fm profile.
+
+---
 
 ## Features
 
-- Live now-playing from Discord Spotify presence
-- Last.fm tops, listening stats, and lifetime data
-- Rotating stat pages with matching header + value fields
-- Payload caching — only PATCHes Discord when something changes
-- `/ping` and `/status` slash commands
+- 🎧 Live now-playing from Discord Spotify presence
+- 📡 Last.fm-backed top artists, albums, tracks, scrobbles, and account stats
+- 🖼 Corrected `album_art` image output for Discord's widget frame
+- 🔁 Rotating 6-card stat pages
+- ⚡ Payload de-duplication so identical updates are not PATCHed again
+- 🤖 `/ping` and `/status` slash commands
+- ☁️ GitHub Actions daemon hosting
+- 🧯 Clean exit before GitHub Actions timeout
 
-## Requirements
+---
 
-- Node.js 18+
-- A Discord application with a bot token
-- A public [Last.fm](https://www.last.fm) profile
-- Spotify connected to Discord (for now-playing)
-- The bot invited to a server you are in (for presence)
+## Documentation
+
+| Document | Purpose |
+| --- | --- |
+| [Setup](docs/SETUP.md) | Discord app, widget fields, Last.fm key, secrets |
+| [Hosting](docs/HOSTING.md) | GitHub Actions daemon, runtime budget, local run |
+| [Architecture](docs/ARCHITECTURE.md) | Module design, daemon lifecycle, Mermaid diagrams |
+| [API flow](docs/API_FLOW.md) | External API calls, sequence diagrams, payload shape |
+| [Image pipeline](docs/IMAGE_PIPELINE.md) | D.W.I.F-style album-art correction and Discord CDN upload |
+| [Widget fields](docs/widget-setup.md) | Exact Discord widget editor field bindings |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common failures and fixes |
+| [Credits](docs/CREDITS.md) | References, inspirations, upstream projects |
+
+---
 
 ## Quick start
+
+### 1. Fork / clone
 
 ```bash
 git clone https://github.com/MeYashverma/discord-stats.fm-widget.git
@@ -33,148 +73,141 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` in the project root with your values:
+### 2. Required values
 
-| Variable | Description |
+| Variable / secret | Description |
 | --- | --- |
-| `DISCORD_BOT_TOKEN` | Bot token from [Discord Developer Portal](https://discord.com/developers/applications) |
-| `DISCORD_APP_ID` | Your Discord application ID |
-| `DISCORD_USER_ID` | Your Discord user ID (the account whose widget gets updated) |
-| `LASTFM_API_KEY` | Free Last.fm API key |
+| `DISCORD_APP_ID` | Discord Developer Portal → Application ID |
+| `DISCORD_USER_ID` | Your Discord user ID |
+| `DISCORD_BOT_TOKEN` | Bot token from Discord Developer Portal |
+| `LASTFM_API_KEY` | Free API key from Last.fm |
 | `LASTFM_USERNAME` | Your Last.fm username |
-| `DISCORD_IMAGE_WEBHOOK_URL` | Optional/recommended webhook URL where corrected album art is uploaded |
+| `DISCORD_IMAGE_WEBHOOK_URL` | Recommended webhook used to upload corrected album art |
 
-All other options are in `.env.example` with safe defaults.
+`DISCORD_TARGET_CHANNEL_ID` is also supported as a bot-upload fallback, but `DISCORD_IMAGE_WEBHOOK_URL` is preferred because it matches the Lyrically widget image-hosting approach.
 
-> If you run `npm start` without these values, the app will stop with `Invalid configuration`. That is expected locally. In GitHub Actions, repository secrets must be mapped into the workflow `env:` block.
-
-### Discord setup
-
-1. Create an application in the Developer Portal
-2. Add a bot and copy the token into `.env`
-3. Enable **Presence Intent** and **Server Members Intent** under Bot settings
-4. Invite the bot to a server you are in
-5. Optional but recommended for album-art correction: create a webhook in an image channel and set `DISCORD_IMAGE_WEBHOOK_URL`
-6. Authorize the app once with the `sdk.social_layer` OAuth scope (required for widget PATCH)
-7. Configure your profile widget in Discord — see **[Widget setup guide](docs/widget-setup.md)**
-
-### Run
+### 3. Run locally
 
 ```bash
-# Development (auto-reload)
-npm run dev
-
-# Production
 npm run build
 npm start
 ```
 
-## Widget setup
+### 4. Run in GitHub Actions
 
-The hardest part is binding fields in the Discord widget editor. Every field the bot updates must be set to **User Data** with the matching **Data Field** name.
+Add the same values as repository secrets, then open:
 
-See the full guide: **[docs/widget-setup.md](docs/widget-setup.md)**
+```text
+Actions → Update Last.fm Discord Widget → Run workflow
+```
 
+The workflow runs for about 5h50m, exits cleanly, then self-dispatches another run. A 6-hour cron is kept as a safety net.
 
-## Album-art image correction
+---
 
-Like the LaunchPad widget, album art can run through a D.W.I.F-style correction pipeline before it is sent to Discord:
+## High-level architecture
 
-1. Download the current Spotify album art.
-2. Center-crop and resize it to a 512×512 square PNG.
-3. Add the transparent top strip and rounded top-right corner Discord's widget image frame expects.
-4. Upload the corrected PNG to a Discord channel.
-5. Send the resulting `cdn.discordapp.com` attachment URL as `hero_image`.
+```mermaid
+flowchart TB
+    subgraph Runner[GitHub Actions runner]
+        WF[workflow_dispatch / cron]
+        NODE[npm start]
+        LOOP[index.ts poll loop]
+        DJS[discord.js client]
+        LFM[lastfm.ts]
+        IMG[imagePipeline.ts]
+        PAY[widgetUpdater.ts]
+    end
 
-Set `DISCORD_IMAGE_WEBHOOK_URL` as a repository secret/local env value to enable the same webhook upload path used by the Lyrically widget. If you prefer bot upload, set `DISCORD_TARGET_CHANNEL_ID` instead. Without either one, the bot falls back to the direct album art URL.
+    subgraph External[External services]
+        PRES[Discord Gateway Presence]
+        LASTFM[Last.fm API]
+        WEBHOOK[Discord image webhook / channel]
+        CDN[Discord CDN]
+        PATCH[Discord Profile Widget PATCH endpoint]
+    end
 
-## Rotating stat pages
+    WF --> NODE --> LOOP
+    LOOP --> DJS
+    DJS -. presenceUpdate / member fetch .-> PRES
+    LOOP --> LFM
+    LFM -. REST .-> LASTFM
+    LOOP --> IMG
+    IMG -. download album art .-> CDN
+    IMG -. multipart upload .-> WEBHOOK
+    WEBHOOK -. attachment URL .-> CDN
+    LOOP --> PAY
+    PAY -. PATCH JSON .-> PATCH
+```
 
-When `ROTATING_STATS=true`, the bottom six cards cycle every `ROTATION_INTERVAL_SECONDS` (default 30s). Each card needs **two** User Data bindings — small text → `hdr_*`, large text → `top_*`. The field names are six fixed slots; the text inside them changes per page. If headers stay frozen, they're probably set to Custom String instead of User Data.
+More detailed diagrams are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/API_FLOW.md](docs/API_FLOW.md).
 
-Pages:
+---
 
-1. **Top Music** — 4w / 6m artist, album, song
-2. **Listening Stats** — today / week / month minutes, streams, uniques
-3. **Discovery** — last streamed artist/album/song, monthly library counts
-4. **Lifetime** — lifetime minutes/streams, avg daily, genre, library size, account age
+## Widget fields summary
 
-To add a page, append to `STAT_PAGES` in `src/rotatingStats.ts`.
+Set the widget image field to **User Data** with this exact field name:
 
-## How now-playing works
+```text
+album_art
+```
 
-Now-playing comes from **Discord Spotify presence** (same source as the green Listening block), so track changes are near-instant via `presenceUpdate`.
+The bot also sends `hero_image` for compatibility with older layouts.
 
-Top stats and rotation data come from **Last.fm**, refreshed every `TOPS_POLL_SECONDS` (default 60s).
+Common text fields:
 
-When Spotify is not in your presence, the widget falls back to idle — `hero_image` is omitted so Discord shows the Application Asset gif you configured in the editor.
+```text
+title
+artist
+album
+subtitle
+hdr_artist_4w
+hdr_album_4w
+hdr_song_4w
+hdr_artist_6m
+hdr_album_6m
+hdr_song_6m
+top_artist_4w
+top_album_4w
+top_song_4w
+top_artist_6m
+top_album_6m
+top_song_6m
+stats_page
+```
 
-## Slash commands
+Full setup: [docs/widget-setup.md](docs/widget-setup.md).
 
-Registered automatically on startup:
+---
 
-| Command | Response |
+## API sources
+
+| API | Used for |
 | --- | --- |
-| `/ping` | Bot online check |
-| `/status` | Bot / widget / Last.fm status |
+| Discord Gateway | Live Spotify presence for near-instant track changes |
+| Last.fm API | Top artists/albums/tracks, scrobbles, profile age, recent track fallback |
+| Discord webhook / channel messages | Hosting corrected album-art PNGs on Discord CDN |
+| Discord Profile Widget endpoint | Updating Dynamic Identity widget fields |
 
-By default commands are **guild-scoped** (instant). Set `COMMANDS_GUILD_ID` to your server ID, or leave empty to use the first mutual guild.
+---
 
-```env
-COMMANDS_GLOBAL=true   # switch to global commands (slow to propagate)
-```
+## Credits
 
-## Hosting
+This project exists because of community research around Discord profile widgets and several related projects:
 
-### GitHub Actions
+- [Discord-Lyrically-Widget](https://github.com/MeYashverma/Discord-Lyrically-Widget) — album-art widget fix, webhook hosting pattern, and GitHub Actions daemon hosting ideas.
+- [Discord-LaunchPad-Widget](https://github.com/MeYashverma/Discord-LaunchPad-Widget) — architecture/documentation style and D.W.I.F image pipeline references.
+- [discord-lastfm-widget](https://github.com/MeYashverma/discord-lastfm-widget) — Last.fm widget payload experiments.
+- [discord-waifu-widget](https://github.com/MeYashverma/discord-waifu-widget) — Discord widget automation experiments.
+- [Genshin-Stats](https://github.com/MeYashverma/Genshin-Stats) — public README/documentation style.
+- [D.W.I.F](https://github.com/AjaxFNC-YT/D.W.I.F) by AjaxFNC-YT — Discord Widget Image Fixer algorithm inspiration.
+- [Chloe Cinders — Discord widgets article](https://chloecinders.com/blog/discord-widgets) — Discord widget setup research.
+- [aamiaa widget creation script](https://gist.github.com/aamiaa/7cdd590e3949cd654758bc90bcb4710b) — widget creation reference.
+- [Last.fm API](https://www.last.fm/api), [Discord Developer Docs](https://discord.com/developers/docs), and [GitHub Actions Docs](https://docs.github.com/actions).
 
-This repo includes `.github/workflows/update.yml`, which runs the widget as a long-lived GitHub Actions daemon.
+See [docs/CREDITS.md](docs/CREDITS.md) for details.
 
-Add these **Repository secrets** in **Settings → Secrets and variables → Actions → Secrets**:
-
-| Secret | Description |
-| --- | --- |
-| `DISCORD_APP_ID` | Discord Developer Portal → Application ID |
-| `DISCORD_USER_ID` | Your Discord user ID |
-| `DISCORD_BOT_TOKEN` | Discord Developer Portal → Bot token |
-| `LASTFM_API_KEY` | Free Last.fm API key |
-| `LASTFM_USERNAME` | Your Last.fm username |
-| `DISCORD_IMAGE_WEBHOOK_URL` | Optional/recommended webhook URL where corrected album art is uploaded |
-
-Then open **Actions → Update Last.fm Discord Widget → Run workflow**.
-
-The workflow also runs every 6 hours as a safety net. It sets `MAX_RUNTIME_SECONDS=21000` by default so the daemon exits cleanly before GitHub's 6-hour job limit and queues the next run.
-
-Optional settings can be added as **Repository variables**: `POLL_SECONDS`, `TOPS_POLL_SECONDS`, `ROTATING_STATS`, `ROTATION_INTERVAL_SECONDS`, `COMMANDS_GLOBAL`, `COMMANDS_GUILD_ID`, `LASTFM_PROFILE_URL`, `IDLE_IMAGE_URL`, `WIDGET_IMAGE_FIX`, `IMAGE_CACHE_DIR`, and `MAX_RUNTIME_SECONDS`.
-
-### VPS / local process manager
-
-For VPS uptime, run with a process manager like `pm2`:
-
-```bash
-npm run build
-pm2 start dist/index.js --name lastfm-widget
-pm2 save && pm2 startup
-```
-
-## Project layout
-
-```
-src/
-  index.ts           # entrypoint, poll loop
-  config.ts          # env loading (zod)
-  discordClient.ts   # discord.js login + Spotify presence
-  lastfm.ts         # Last.fm API
-  rotatingStats.ts   # stat page definitions
-  widgetUpdater.ts   # Discord widget PATCH + payload cache
-  commands.ts        # slash commands
-  deployCommands.ts  # command registration
-  runtimeStatus.ts   # live status for /status
-  types.ts           # shared types
-  utils.ts           # logging, helpers
-docs/
-  widget-setup.md    # Discord widget editor guide
-```
+---
 
 ## License
 

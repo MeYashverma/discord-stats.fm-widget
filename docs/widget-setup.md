@@ -1,101 +1,179 @@
-# Widget setup guide
+# Widget Field Setup
 
-This is the step-by-step for binding your Discord profile widget to stats.fm widget. If the bot is online but the widget shows static/default values, the editor bindings are almost always the problem.
+This guide lists the exact Discord widget editor bindings used by this project.
 
-## Before you start
+If the workflow logs say `Discord widget updated` but the profile still shows default/editor values, the field bindings are almost always the problem.
 
-1. stats.fm widget is running (`npm run dev` or `npm start`)
-2. Your `.env` has the correct `DISCORD_APP_ID`, `DISCORD_USER_ID`, and `DISCORD_BOT_TOKEN`
-3. You've authorized the app with the `sdk.social_layer` OAuth scope at least once
-4. The bot is in a server with you and has Presence + Server Members intents enabled
+---
 
-## Now playing section
+## Rules
 
-Bind each field to **User Data** and set the **Data Field** name exactly as shown:
+1. Field names are case-sensitive.
+2. Every dynamic field must use **Value Type → User Data**.
+3. Image field should use `album_art`.
+4. Do not run another workflow that PATCHes the same widget with a partial payload.
 
-| Widget element | Data Field | What it shows |
+---
+
+## Image field
+
+For the main album-art image field:
+
+```text
+Value Type: User Data
+Data Field: album_art
+```
+
+The bot sends both `album_art` and `hero_image`, but `album_art` is the recommended field name for this layout.
+
+When nothing is playing, the bot omits the image field so Discord can use the editor fallback / Application Asset.
+
+> User Data image URLs do not animate. If you want an animated idle GIF, upload it as an Application Asset in the Discord Developer Portal and use it as the widget image fallback.
+
+---
+
+## Now-playing text fields
+
+| Widget element | Data Field | Type | Description |
+| --- | --- | --- | --- |
+| Track title | `title` | Text | Current song name |
+| Artist | `artist` | Text | Current artist |
+| Album | `album` | Text | Current album |
+| Subtitle | `subtitle` | Text | `artist • album` |
+
+---
+
+## Bottom stat cards
+
+Each stat card normally has two text areas:
+
+| Editor slot | Bind to | Description |
 | --- | --- | --- |
-| Title | `title` | Current song name |
-| Subtitle / artist line | `artist` or `subtitle` | Artist name |
-| Album | `album` | Album name |
-| Hero / cover image | `hero_image` | Album art while playing |
+| Value / small header | `hdr_*` | Card title/header |
+| Label / large text | `top_*` | Card value |
 
-### Idle state (nothing playing)
+Use these six fixed slots:
 
-When idle, the bot **omits** `hero_image` from the PATCH payload. Discord then falls back to whatever **Application Asset** you set as the image fallback in the widget editor.
-
-**Important:** User Data image URLs do not animate. If you want an animated idle gif, upload it as an Application Asset in the Developer Portal and set it as the hero image fallback in the editor — do not bind idle art to a User Data field.
-
-## Bottom stat cards (6 cards)
-
-Each stat card has two text areas in the Discord widget editor:
-
-| Editor slot | Bind to | What it is |
+| Card | Header field | Value field |
 | --- | --- | --- |
-| **Value** (small text on top) | `hdr_*` | Header / label for that card |
-| **Label** (large text below) | `top_*` | The stat value |
+| 1 | `hdr_artist_4w` | `top_artist_4w` |
+| 2 | `hdr_album_4w` | `top_album_4w` |
+| 3 | `hdr_song_4w` | `top_song_4w` |
+| 4 | `hdr_artist_6m` | `top_artist_6m` |
+| 5 | `hdr_album_6m` | `top_album_6m` |
+| 6 | `hdr_song_6m` | `top_song_6m` |
 
-Both must be **User Data**. If only the big numbers change but the small headers stay frozen, the header is still set to **Custom String**.
+The names are historical. In rotating mode these are just six reusable card slots.
 
-### Card bindings (same for every page)
+---
 
-These never change — set them once in the editor:
+## Rotating pages
 
-| Card | Small text → `hdr_*` | Large text → `top_*` |
+When `ROTATING_STATS=true`, the same six cards rotate every `ROTATION_INTERVAL_SECONDS`.
+
+### Page 1 — Top Music
+
+| Card | Header | Value |
 | --- | --- | --- |
-| #1 | `hdr_artist_4w` | `top_artist_4w` |
-| #2 | `hdr_album_4w` | `top_album_4w` |
-| #3 | `hdr_song_4w` | `top_song_4w` |
-| #4 | `hdr_artist_6m` | `top_artist_6m` |
-| #5 | `hdr_album_6m` | `top_album_6m` |
-| #6 | `hdr_song_6m` | `top_song_6m` |
+| 1 | Top Artist(4w) | Top artist for Last.fm `1month` |
+| 2 | Top Album(4w) | Top album for Last.fm `1month` |
+| 3 | Top Song(4w) | Top track for Last.fm `1month` |
+| 4 | Top Artist(6m) | Top artist for Last.fm `6month` |
+| 5 | Top Album(6m) | Top album for Last.fm `6month` |
+| 6 | Top Song(6m) | Top track for Last.fm `6month` |
 
-The field names look like "artist" / "album" / "song" but they are really just **six slots**. When pages rotate, the bot reuses the same six field names with different text.
+### Page 2 — Listening Stats
 
-### Static mode (`ROTATING_STATS=false`)
+Last.fm exposes scrobbles more reliably than listening minutes, so these fields are adapted to Last.fm data.
 
-Only the **Top Music** page is shown. Card #1 header = `Top Artist(4w)`, value = your top artist, and so on.
+| Card | Meaning |
+| --- | --- |
+| 1 | Source indicator |
+| 2 | Scrobble indicator |
+| 3 | Tracks this month |
+| 4 | Total scrobbles |
+| 5 | Unique artists overall |
+| 6 | Unique tracks overall |
 
-### Rotating mode (`ROTATING_STATS=true`)
+### Page 3 — Discovery
 
-Same six bindings as above. Every `ROTATION_INTERVAL_SECONDS` (default 30s) the bot swaps in a new page:
+| Card | Meaning |
+| --- | --- |
+| 1 | Last artist |
+| 2 | Last album |
+| 3 | Last song |
+| 4 | Artists this month |
+| 5 | Albums this month |
+| 6 | Tracks this month |
 
-**Page 1 — Top Music**
-- #1 Top Artist(4w) / #2 Top Album(4w) / #3 Top Song(4w)
-- #4 Top Artist(6m) / #5 Top Album(6m) / #6 Top Song(6m)
+### Page 4 — Lifetime
 
-**Page 2 — Listening Stats**
-- #1 Today / #2 This Week / #3 This Month
-- #4 Total Streams / #5 Unique Artists / #6 Unique Tracks
+| Card | Meaning |
+| --- | --- |
+| 1 | Lifetime minutes (`N/A` for Last.fm) |
+| 2 | Lifetime scrobbles |
+| 3 | Average daily (`N/A` for Last.fm) |
+| 4 | Top artist overall |
+| 5 | Library size / unique tracks |
+| 6 | Account age |
 
-**Page 3 — Discovery**
-- #1 Last Artist / #2 Last Album / #3 Last Song
-- #4 Artists Month / #5 Albums Month / #6 Songs Month
-
-**Page 4 — Lifetime**
-- #1 Lifetime Minutes / #2 Lifetime Streams / #3 Average Daily
-- #4 Top Genre / #5 Library Size / #6 Account Age
+---
 
 ## Optional page indicator
 
-The bot sends a `stats_page` field (e.g. `2/4 · Listening Stats`). Add a User Data text field bound to `stats_page` if you want a visible page indicator — it's optional and safe to ignore.
+The bot sends two aliases:
 
-## Troubleshooting
+```text
+stats_page
+page
+```
+
+Bind either one to a text field if you want a visible label like:
+
+```text
+2/4 · Listening Stats
+```
+
+---
+
+## Full field checklist
+
+```text
+album_art
+title
+artist
+album
+subtitle
+hdr_artist_4w
+hdr_album_4w
+hdr_song_4w
+hdr_artist_6m
+hdr_album_6m
+hdr_song_6m
+top_artist_4w
+top_album_4w
+top_song_4w
+top_artist_6m
+top_album_6m
+top_song_6m
+stats_page
+```
+
+Compatibility image alias:
+
+```text
+hero_image
+```
+
+---
+
+## Troubleshooting bindings
 
 | Problem | Fix |
 | --- | --- |
-| Widget shows designer defaults / sample text | Every field must be **User Data**, not Custom String. Payload must include `username` (the bot sends `STATSM_USERNAME` automatically). |
-| Now playing never updates | Enable Presence Intent. Bot must share a server with you. Spotify must be connected in Discord. |
-| Headers don't rotate | Bind the small header text to `hdr_*` User Data fields, not Custom String. |
-| Idle gif is a still image | Don't send idle gif via User Data URL. Use an Application Asset fallback in the editor. |
-| 401 / 403 on PATCH | Check bot token, app ID, user ID, and `sdk.social_layer` authorization. |
-
-## Discord API details
-
-```
-PATCH https://discord.com/api/v9/applications/{DISCORD_APP_ID}/users/{DISCORD_USER_ID}/identities/0/profile
-Authorization: Bot {DISCORD_BOT_TOKEN}
-User-Agent: DiscordBot (https://github.com/discord/discord-api-docs, 1.0.0)
-```
-
-The root payload must include `username`. Without it, Discord returns success but the widget keeps showing fallback values.
+| Image does not change | Bind Image → User Data → `album_art` |
+| Image is raw square art | Check [Image Pipeline](IMAGE_PIPELINE.md) and webhook secret |
+| Text remains sample/default | Field is probably Custom String instead of User Data |
+| Headers do not rotate | Bind small card text to `hdr_*`, not hardcoded strings |
+| Values do not rotate | Bind large card text to `top_*` fields |
+| Widget accepts PATCH but does not display | Ensure payload includes `username` and fields match exactly |
