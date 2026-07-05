@@ -31,7 +31,7 @@ export interface CurrentTrack {
   artist: string;
   album: string;
   heroImageUrl: string;
-  /** ISO timestamp of the stream end time from stats.fm. */
+  /** ISO timestamp of the stream end time from Last.fm. */
   endTime: string;
 }
 
@@ -70,6 +70,7 @@ export const WIDGET_FIELD_NAMES = [
   "album",
   "subtitle",
   "hero_image",
+  "album_art",
   "hdr_artist_4w",
   "hdr_album_4w",
   "hdr_song_4w",

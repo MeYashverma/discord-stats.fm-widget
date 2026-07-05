@@ -32,7 +32,10 @@ const configSchema = z.object({
   DISCORD_BOT_TOKEN: z
     .string()
     .min(1, "DISCORD_BOT_TOKEN is required — set it in your .env file"),
-  STATSM_USERNAME: z.string().min(1, "STATSM_USERNAME is required"),
+  LASTFM_API_KEY: z.string().min(1, "LASTFM_API_KEY is required"),
+  LASTFM_USERNAME: z.string().min(1, "LASTFM_USERNAME is required"),
+  // Optional: webhook from the image channel, same approach as Discord-Lyrically-Widget.
+  DISCORD_IMAGE_WEBHOOK_URL: optionalUrl,
   // Optional channel used to upload D.W.I.F-corrected album art and get a Discord CDN URL.
   DISCORD_TARGET_CHANNEL_ID: z
     .string()
@@ -41,9 +44,9 @@ const configSchema = z.object({
       const trimmed = value?.trim() ?? "";
       return trimmed.length > 0 ? trimmed : undefined;
     }),
-  STATSM_PROFILE_URL: optionalUrl,
+  LASTFM_PROFILE_URL: optionalUrl,
   IDLE_IMAGE_URL: optionalUrl,
-  // Recent streams — keep low for near-live now-playing (stats.fm records after a song ends).
+  // Backup poll for Discord Spotify presence.
   POLL_SECONDS: positiveIntWithDefault(5),
   // Tops change slowly; refresh less often so we can poll recent streams hard.
   TOPS_POLL_SECONDS: positiveIntWithDefault(60),
@@ -65,13 +68,6 @@ const configSchema = z.object({
       const trimmed = value?.trim() ?? "";
       return trimmed.length > 0 ? trimmed : undefined;
     }),
-  STATSM_RECENT_URL: optionalUrl,
-  STATSM_TOP_ARTISTS_4W_URL: optionalUrl,
-  STATSM_TOP_ALBUMS_4W_URL: optionalUrl,
-  STATSM_TOP_TRACKS_4W_URL: optionalUrl,
-  STATSM_TOP_ARTISTS_6M_URL: optionalUrl,
-  STATSM_TOP_ALBUMS_6M_URL: optionalUrl,
-  STATSM_TOP_TRACKS_6M_URL: optionalUrl,
   // GitHub Actions daemon mode: 0 disables auto-exit for local/VPS use.
   MAX_RUNTIME_SECONDS: nonNegativeIntWithDefault(0),
   WIDGET_IMAGE_FIX: z
@@ -92,10 +88,13 @@ export type AppConfig = {
   discordUserId: string;
   /** Discord bot token — never log this value. */
   discordBotToken: string;
-  statsmUsername: string;
+  lastfmApiKey: string;
+  lastfmUsername: string;
+  /** Optional Discord webhook for corrected album art uploads. */
+  discordImageWebhookUrl?: string;
   /** Optional channel for uploading corrected album art to Discord CDN. */
   discordTargetChannelId?: string;
-  statsmProfileUrl: string;
+  profileUrl: string;
   idleImageUrl?: string;
   pollSeconds: number;
   topsPollSeconds: number;
@@ -112,30 +111,7 @@ export type AppConfig = {
   commandsGlobal: boolean;
   /** Guild for instant slash command registration in development. */
   commandsGuildId?: string;
-  statsmUrls: {
-    recent: string;
-    topArtists4w: string;
-    topAlbums4w: string;
-    topTracks4w: string;
-    topArtists6m: string;
-    topAlbums6m: string;
-    topTracks6m: string;
-  };
 };
-
-function defaultStatsmUrls(username: string) {
-  const base = `https://api.stats.fm/api/v1/users/${encodeURIComponent(username)}`;
-  return {
-    recent: `${base}/streams/recent`,
-    // stats.fm: range=weeks ≈ last 4 weeks, range=months ≈ last 6 months
-    topArtists4w: `${base}/top/artists?range=weeks&limit=1`,
-    topAlbums4w: `${base}/top/albums?range=weeks&limit=1`,
-    topTracks4w: `${base}/top/tracks?range=weeks&limit=1`,
-    topArtists6m: `${base}/top/artists?range=months&limit=1`,
-    topAlbums6m: `${base}/top/albums?range=months&limit=1`,
-    topTracks6m: `${base}/top/tracks?range=months&limit=1`,
-  };
-}
 
 function loadConfig(): AppConfig {
   const parsed = configSchema.safeParse(process.env);
@@ -148,17 +124,18 @@ function loadConfig(): AppConfig {
   }
 
   const env = parsed.data;
-  const defaults = defaultStatsmUrls(env.STATSM_USERNAME);
 
   return {
     discordAppId: env.DISCORD_APP_ID,
     discordUserId: env.DISCORD_USER_ID,
     discordBotToken: env.DISCORD_BOT_TOKEN,
-    statsmUsername: env.STATSM_USERNAME,
+    lastfmApiKey: env.LASTFM_API_KEY,
+    lastfmUsername: env.LASTFM_USERNAME,
+    discordImageWebhookUrl: env.DISCORD_IMAGE_WEBHOOK_URL,
     discordTargetChannelId: env.DISCORD_TARGET_CHANNEL_ID,
-    statsmProfileUrl:
-      env.STATSM_PROFILE_URL ??
-      `https://stats.fm/${encodeURIComponent(env.STATSM_USERNAME)}`,
+    profileUrl:
+      env.LASTFM_PROFILE_URL ??
+      `https://www.last.fm/user/${encodeURIComponent(env.LASTFM_USERNAME)}`,
     idleImageUrl: env.IDLE_IMAGE_URL,
     pollSeconds: env.POLL_SECONDS,
     topsPollSeconds: env.TOPS_POLL_SECONDS,
@@ -170,15 +147,6 @@ function loadConfig(): AppConfig {
     imageCacheDir: env.IMAGE_CACHE_DIR,
     commandsGlobal: Boolean(env.COMMANDS_GLOBAL),
     commandsGuildId: env.COMMANDS_GUILD_ID,
-    statsmUrls: {
-      recent: env.STATSM_RECENT_URL ?? defaults.recent,
-      topArtists4w: env.STATSM_TOP_ARTISTS_4W_URL ?? defaults.topArtists4w,
-      topAlbums4w: env.STATSM_TOP_ALBUMS_4W_URL ?? defaults.topAlbums4w,
-      topTracks4w: env.STATSM_TOP_TRACKS_4W_URL ?? defaults.topTracks4w,
-      topArtists6m: env.STATSM_TOP_ARTISTS_6M_URL ?? defaults.topArtists6m,
-      topAlbums6m: env.STATSM_TOP_ALBUMS_6M_URL ?? defaults.topAlbums6m,
-      topTracks6m: env.STATSM_TOP_TRACKS_6M_URL ?? defaults.topTracks6m,
-    },
   };
 }
 

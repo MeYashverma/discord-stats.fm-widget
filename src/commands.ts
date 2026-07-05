@@ -17,7 +17,7 @@ export const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = 
     .toJSON(),
   new SlashCommandBuilder()
     .setName("status")
-    .setDescription("Show bot, widget, and stats.fm status")
+    .setDescription("Show bot, widget, and Last.fm status")
     .toJSON(),
 ];
 
@@ -29,7 +29,7 @@ export async function handleSlashCommand(
   try {
     if (name === "ping") {
       await interaction.reply({
-        content: "🏓 stats.fm widget is online!",
+        content: "🏓 Last.fm widget is online!",
         ephemeral: true,
       });
       return;
@@ -38,11 +38,11 @@ export async function handleSlashCommand(
     if (name === "status") {
       const status = getRuntimeStatus();
       const body = [
-        "🎵 stats.fm widget",
+        "🎵 Last.fm widget",
         "",
         `Bot: ${status.botOnline ? "Online" : "Offline"}`,
         `Widget: ${status.widgetActive ? "Active" : "Inactive"}`,
-        `stats.fm: ${status.statsfmConnected ? "Connected" : "Disconnected"}`,
+        `Last.fm: ${status.statsfmConnected ? "Connected" : "Disconnected"}`,
         `Last Update: ${formatLastUpdate(status.lastWidgetUpdateAt)}`,
       ].join("\n");
 

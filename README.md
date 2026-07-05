@@ -1,17 +1,17 @@
-# stats.fm widget
+# Last.fm Discord widget
 
-Single-user Discord bot that keeps your custom **Profile Widget** in sync with live [stats.fm](https://stats.fm) data and Spotify now-playing from Discord presence.
+Single-user Discord bot that keeps your custom **Profile Widget** in sync with live [Last.fm](https://www.last.fm) data and Spotify now-playing from Discord presence.
 
 **Top section** — song title, artist, album, and cover art update in real time.
 
 **Bottom 6 cards** — rotate through 4 stat pages every 30 seconds: Top Music, Listening Stats, Last Streamed, and Lifetime.
 
-> **Note:** This is built for one Discord account + one stats.fm profile. The Discord profile widget API is experimental and may change.
+> **Note:** This is built for one Discord account + one Last.fm profile. The Discord profile widget API is experimental and may change.
 
 ## Features
 
 - Live now-playing from Discord Spotify presence
-- stats.fm tops, listening stats, and lifetime data
+- Last.fm tops, listening stats, and lifetime data
 - Rotating stat pages with matching header + value fields
 - Payload caching — only PATCHes Discord when something changes
 - `/ping` and `/status` slash commands
@@ -20,7 +20,7 @@ Single-user Discord bot that keeps your custom **Profile Widget** in sync with l
 
 - Node.js 18+
 - A Discord application with a bot token
-- A public [stats.fm](https://stats.fm) profile
+- A public [Last.fm](https://www.last.fm) profile
 - Spotify connected to Discord (for now-playing)
 - The bot invited to a server you are in (for presence)
 
@@ -40,8 +40,9 @@ Edit `.env` in the project root with your values:
 | `DISCORD_BOT_TOKEN` | Bot token from [Discord Developer Portal](https://discord.com/developers/applications) |
 | `DISCORD_APP_ID` | Your Discord application ID |
 | `DISCORD_USER_ID` | Your Discord user ID (the account whose widget gets updated) |
-| `STATSM_USERNAME` | Your stats.fm username |
-| `DISCORD_TARGET_CHANNEL_ID` | Optional channel where corrected album art is uploaded |
+| `LASTFM_API_KEY` | Free Last.fm API key |
+| `LASTFM_USERNAME` | Your Last.fm username |
+| `DISCORD_IMAGE_WEBHOOK_URL` | Optional/recommended webhook URL where corrected album art is uploaded |
 
 All other options are in `.env.example` with safe defaults.
 
@@ -53,7 +54,7 @@ All other options are in `.env.example` with safe defaults.
 2. Add a bot and copy the token into `.env`
 3. Enable **Presence Intent** and **Server Members Intent** under Bot settings
 4. Invite the bot to a server you are in
-5. Optional but recommended for album-art correction: create/use a channel where the bot can send messages/files and set `DISCORD_TARGET_CHANNEL_ID`
+5. Optional but recommended for album-art correction: create a webhook in an image channel and set `DISCORD_IMAGE_WEBHOOK_URL`
 6. Authorize the app once with the `sdk.social_layer` OAuth scope (required for widget PATCH)
 7. Configure your profile widget in Discord — see **[Widget setup guide](docs/widget-setup.md)**
 
@@ -85,7 +86,7 @@ Like the LaunchPad widget, album art can run through a D.W.I.F-style correction 
 4. Upload the corrected PNG to a Discord channel.
 5. Send the resulting `cdn.discordapp.com` attachment URL as `hero_image`.
 
-Set `DISCORD_TARGET_CHANNEL_ID` as a repository secret/local env value to enable the upload step. The bot needs permission to send messages and attach files in that channel. If the channel is not configured, the bot falls back to the direct album art URL.
+Set `DISCORD_IMAGE_WEBHOOK_URL` as a repository secret/local env value to enable the same webhook upload path used by the Lyrically widget. If you prefer bot upload, set `DISCORD_TARGET_CHANNEL_ID` instead. Without either one, the bot falls back to the direct album art URL.
 
 ## Rotating stat pages
 
@@ -104,7 +105,7 @@ To add a page, append to `STAT_PAGES` in `src/rotatingStats.ts`.
 
 Now-playing comes from **Discord Spotify presence** (same source as the green Listening block), so track changes are near-instant via `presenceUpdate`.
 
-Top stats and rotation data come from **stats.fm**, refreshed every `TOPS_POLL_SECONDS` (default 60s).
+Top stats and rotation data come from **Last.fm**, refreshed every `TOPS_POLL_SECONDS` (default 60s).
 
 When Spotify is not in your presence, the widget falls back to idle — `hero_image` is omitted so Discord shows the Application Asset gif you configured in the editor.
 
@@ -115,7 +116,7 @@ Registered automatically on startup:
 | Command | Response |
 | --- | --- |
 | `/ping` | Bot online check |
-| `/status` | Bot / widget / stats.fm status |
+| `/status` | Bot / widget / Last.fm status |
 
 By default commands are **guild-scoped** (instant). Set `COMMANDS_GUILD_ID` to your server ID, or leave empty to use the first mutual guild.
 
@@ -136,14 +137,15 @@ Add these **Repository secrets** in **Settings → Secrets and variables → Act
 | `DISCORD_APP_ID` | Discord Developer Portal → Application ID |
 | `DISCORD_USER_ID` | Your Discord user ID |
 | `DISCORD_BOT_TOKEN` | Discord Developer Portal → Bot token |
-| `STATSM_USERNAME` | Your stats.fm username |
-| `DISCORD_TARGET_CHANNEL_ID` | Optional channel where corrected album art is uploaded |
+| `LASTFM_API_KEY` | Free Last.fm API key |
+| `LASTFM_USERNAME` | Your Last.fm username |
+| `DISCORD_IMAGE_WEBHOOK_URL` | Optional/recommended webhook URL where corrected album art is uploaded |
 
-Then open **Actions → Update stats.fm Discord Widget → Run workflow**.
+Then open **Actions → Update Last.fm Discord Widget → Run workflow**.
 
 The workflow also runs every 6 hours as a safety net. It sets `MAX_RUNTIME_SECONDS=21000` by default so the daemon exits cleanly before GitHub's 6-hour job limit and queues the next run.
 
-Optional settings can be added as **Repository variables**: `POLL_SECONDS`, `TOPS_POLL_SECONDS`, `ROTATING_STATS`, `ROTATION_INTERVAL_SECONDS`, `COMMANDS_GLOBAL`, `COMMANDS_GUILD_ID`, `STATSM_PROFILE_URL`, `IDLE_IMAGE_URL`, `WIDGET_IMAGE_FIX`, `IMAGE_CACHE_DIR`, and `MAX_RUNTIME_SECONDS`.
+Optional settings can be added as **Repository variables**: `POLL_SECONDS`, `TOPS_POLL_SECONDS`, `ROTATING_STATS`, `ROTATION_INTERVAL_SECONDS`, `COMMANDS_GLOBAL`, `COMMANDS_GUILD_ID`, `LASTFM_PROFILE_URL`, `IDLE_IMAGE_URL`, `WIDGET_IMAGE_FIX`, `IMAGE_CACHE_DIR`, and `MAX_RUNTIME_SECONDS`.
 
 ### VPS / local process manager
 
@@ -151,7 +153,7 @@ For VPS uptime, run with a process manager like `pm2`:
 
 ```bash
 npm run build
-pm2 start dist/index.js --name statsfm-widget
+pm2 start dist/index.js --name lastfm-widget
 pm2 save && pm2 startup
 ```
 
@@ -162,7 +164,7 @@ src/
   index.ts           # entrypoint, poll loop
   config.ts          # env loading (zod)
   discordClient.ts   # discord.js login + Spotify presence
-  statsfm.ts         # stats.fm API
+  lastfm.ts         # Last.fm API
   rotatingStats.ts   # stat page definitions
   widgetUpdater.ts   # Discord widget PATCH + payload cache
   commands.ts        # slash commands

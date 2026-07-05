@@ -1,4 +1,4 @@
-name: Update stats.fm Discord Widget
+name: Update Last.fm Discord Widget
 
 # Long-lived daemon for the Discord profile widget.
 # The app exits before GitHub Actions' 6-hour hard limit, then this workflow
@@ -16,7 +16,7 @@ permissions:
 
 # Prevent two runners from PATCHing the same Discord widget at the same time.
 concurrency:
-  group: statsfm-widget-daemon
+  group: lastfm-widget-daemon
   cancel-in-progress: false
 
 jobs:
@@ -45,13 +45,16 @@ jobs:
           DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          STATSM_USERNAME: ${{ secrets.STATSM_USERNAME }}
-          # Optional: channel the bot can send messages to. Required for the
-          # D.W.I.F image correction pipeline to upload album art to Discord CDN.
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_USERNAME: ${{ secrets.LASTFM_USERNAME }}
+          # Optional/recommended: same image-upload method as Discord-Lyrically-Widget.
+          # Create a webhook in your image channel and save its URL as this secret.
+          DISCORD_IMAGE_WEBHOOK_URL: ${{ secrets.DISCORD_IMAGE_WEBHOOK_URL }}
+          # Alternative upload method if you do not want to use a webhook.
           DISCORD_TARGET_CHANNEL_ID: ${{ secrets.DISCORD_TARGET_CHANNEL_ID }}
 
           # Optional repository variables (Settings → Secrets and variables → Actions → Variables)
-          STATSM_PROFILE_URL: ${{ vars.STATSM_PROFILE_URL }}
+          LASTFM_PROFILE_URL: ${{ vars.LASTFM_PROFILE_URL }}
           IDLE_IMAGE_URL: ${{ vars.IDLE_IMAGE_URL }}
           POLL_SECONDS: ${{ vars.POLL_SECONDS || '5' }}
           TOPS_POLL_SECONDS: ${{ vars.TOPS_POLL_SECONDS || '60' }}

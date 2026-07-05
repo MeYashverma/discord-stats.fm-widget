@@ -9,7 +9,7 @@ import {
   loginDiscord,
 } from "./discordClient";
 import { deploySlashCommands } from "./deployCommands";
-import { fetchRotationData } from "./statsfm";
+import { fetchCurrentTrack as fetchLastfmCurrentTrack, fetchRotationData } from "./lastfm";
 import {
   buildRotatedTopStats,
   emptyRotationData,
@@ -24,7 +24,7 @@ import { logger, sleep } from "./utils";
 /** Monotonic generation so an older in-flight poll cannot overwrite a newer one. */
 let updateGeneration = 0;
 
-/** Cached rotation stats from stats.fm. */
+/** Cached rotation stats from Last.fm. */
 let cachedRotation: RotationData = emptyRotationData();
 let rotationFetchedAt = 0;
 let rotationInFlight: Promise<RotationData> | null = null;
@@ -41,10 +41,10 @@ let presenceEverWorked = false;
 let lastPresenceTrack: CurrentTrack | null = null;
 
 /**
- * stats.fm widget — single-user Discord profile widget service.
+ * Last.fm widget — single-user Discord profile widget service.
  *
  * - Now-playing: Discord Spotify presence (every poll / presence event)
- * - Bottom stats: stats.fm, optionally rotating pages every ROTATION_INTERVAL_SECONDS
+ * - Bottom stats: Last.fm, optionally rotating pages every ROTATION_INTERVAL_SECONDS
  */
 async function getRotationData(force = false): Promise<RotationData> {
   const ageMs = Date.now() - rotationFetchedAt;
@@ -120,9 +120,17 @@ async function resolveCurrentTrack(client: Client): Promise<CurrentTrack | null>
       return lastPresenceTrack;
     }
 
-    logger.warn("Discord presence unavailable — widget stays idle until presence works", {
+    logger.warn("Discord presence unavailable; trying Last.fm now-playing fallback", {
       reason: presence.reason,
     });
+    const lastfmTrack = await fetchLastfmCurrentTrack();
+    if (lastfmTrack) {
+      logger.info("Current track from Last.fm now-playing", {
+        title: lastfmTrack.title,
+        artist: lastfmTrack.artist,
+      });
+      return lastfmTrack;
+    }
     return null;
   } catch (error) {
     logger.error("Failed to read Discord Spotify presence", {
@@ -194,8 +202,8 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
     rotationIntervalSeconds: config.rotationIntervalSeconds,
     pages: STAT_PAGES.map((page) => page.title),
     nowPlaying: "discord-spotify-presence",
-    tops: "stats.fm",
-    profile: config.statsmProfileUrl,
+    tops: "Last.fm",
+    profile: config.profileUrl,
     maxRuntimeSeconds: config.maxRuntimeSeconds,
   });
 
@@ -260,10 +268,10 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
 }
 
 async function main(): Promise<void> {
-  logger.info("stats.fm widget starting", {
+  logger.info("Last.fm widget starting", {
     discordAppId: config.discordAppId,
     discordUserId: config.discordUserId,
-    statsmUsername: config.statsmUsername,
+    lastfmUsername: config.lastfmUsername,
     rotatingStats: config.rotatingStats,
   });
 

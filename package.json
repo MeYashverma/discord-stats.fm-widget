@@ -1,7 +1,7 @@
 {
   "name": "statsfm-widget",
   "version": "1.0.0",
-  "description": "Discord profile widget bot powered by stats.fm and Spotify presence",
+  "description": "Discord profile widget bot powered by Last.fm and Spotify presence",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -13,7 +13,7 @@
   },
   "keywords": [
     "discord",
-    "stats.fm",
+    "last.fm",
     "profile-widget",
     "spotify",
     "bot"
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/akahobby/stats.fm-widget.git"
+    "url": "https://github.com/MeYashverma/discord-stats.fm-widget.git"
   },
   "dependencies": {
     "axios": "^1.10.0",

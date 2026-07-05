@@ -42,7 +42,7 @@ function isHttpsUrl(value: string): boolean {
 /**
  * Discord Widget Image Fixer, ported from the LaunchPad repo's D.W.I.F flow.
  *
- * Album art is downloaded, center-cropped to a 512×512 square PNG, shifted down
+ * Album art is downloaded, resized to a 512×512 square PNG, shifted down
  * to create a transparent top strip, clipped at the top-right corner, uploaded
  * to a Discord channel, then the widget receives the resulting CDN URL.
  */
@@ -56,10 +56,10 @@ export class WidgetImagePipeline {
     const normalized = shortenAlbumSourceUrl(sourceUrl);
     if (!normalized || !isHttpsUrl(normalized)) return "";
 
-    if (!config.discordTargetChannelId) {
+    if (!config.discordImageWebhookUrl && !config.discordTargetChannelId) {
       if (!this.warnedMissingChannel) {
         logger.warn(
-          "WIDGET_IMAGE_FIX is enabled but DISCORD_TARGET_CHANNEL_ID is not set; using direct album art URL",
+          "WIDGET_IMAGE_FIX is enabled but neither DISCORD_IMAGE_WEBHOOK_URL nor DISCORD_TARGET_CHANNEL_ID is set; using direct album art URL",
         );
         this.warnedMissingChannel = true;
       }
@@ -77,7 +77,9 @@ export class WidgetImagePipeline {
 
       await this.downloadImage(normalized, rawPath);
       await this.processImage(rawPath, fixedPath);
-      const cdnUrl = await this.uploadToDiscord(fixedPath, `statsfm-${key}-dwif.png`);
+      const cdnUrl = config.discordImageWebhookUrl
+        ? await this.uploadViaWebhook(fixedPath, `lastfm-${key}-dwif.png`)
+        : await this.uploadToDiscord(fixedPath, `lastfm-${key}-dwif.png`);
 
       this.memoryCache.set(normalized, { cdnUrl, uploadedAt: Date.now() });
       logger.info("Prepared widget hero image through D.W.I.F pipeline", {
@@ -100,7 +102,7 @@ export class WidgetImagePipeline {
       maxContentLength: MAX_IMAGE_BYTES,
       headers: {
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "User-Agent": "statsfm-widget/1.0",
+        "User-Agent": "lastfm-widget/1.0",
       },
       validateStatus: (status) => status >= 200 && status < 300,
     });
@@ -117,7 +119,8 @@ export class WidgetImagePipeline {
 
     const base = await sharp(inputPath)
       .rotate()
-      .resize(TARGET_SIZE, TARGET_SIZE, { fit: "cover", position: "centre" })
+      // Match Discord-Lyrically-Widget exactly: resize to 512×512, then shift down.
+      .resize(TARGET_SIZE, TARGET_SIZE, { fit: "fill" })
       .ensureAlpha()
       .png()
       .toBuffer();
@@ -152,6 +155,35 @@ export class WidgetImagePipeline {
       })
       .png({ compressionLevel: 9 })
       .toFile(outputPath);
+  }
+
+
+  private async uploadViaWebhook(localPath: string, filename: string): Promise<string> {
+    if (!config.discordImageWebhookUrl) {
+      throw new Error("DISCORD_IMAGE_WEBHOOK_URL is not configured");
+    }
+
+    const form = new FormData();
+    form.append("file", await fs.readFile(localPath), {
+      filename,
+      contentType: "image/png",
+    });
+
+    const sep = config.discordImageWebhookUrl.includes("?") ? "&" : "?";
+    const response = await axios.post(`${config.discordImageWebhookUrl}${sep}wait=true`, form, {
+      timeout: 30_000,
+      headers: {
+        ...form.getHeaders(),
+        "User-Agent": DISCORD_USER_AGENT,
+      },
+      validateStatus: (status) => status >= 200 && status < 300,
+    });
+
+    const url = response.data?.attachments?.[0]?.url;
+    if (typeof url !== "string" || !url.startsWith("https://")) {
+      throw new Error("Discord webhook response did not include an attachment URL");
+    }
+    return url;
   }
 
   private async uploadToDiscord(localPath: string, filename: string): Promise<string> {

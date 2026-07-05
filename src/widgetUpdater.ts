@@ -83,6 +83,8 @@ export function buildWidgetPayload(snapshot: WidgetSnapshot): WidgetPayload {
   const heroUrl = fitAlbumCoverUrl(track.heroImageUrl);
   if (heroUrl.length > 0) {
     dynamic.push(imageField("hero_image", heroUrl));
+    // Also publish the Lyrically widget field name so either widget binding works.
+    dynamic.push(imageField("album_art", heroUrl));
   }
 
   dynamic.push(
@@ -109,7 +111,7 @@ export function buildWidgetPayload(snapshot: WidgetSnapshot): WidgetPayload {
   }
 
   return {
-    username: config.statsmUsername,
+    username: config.lastfmUsername,
     data: { dynamic },
   };
 }

@@ -10,7 +10,7 @@ import type { TopStats } from "./types";
  * Both must be User Data (not Custom String) or the headers stay frozen.
  *
  * To add a page later:
- * 1. Extend RotationData with any new stats.fm fields you need.
+ * 1. Extend RotationData with any new Last.fm fields you need.
  * 2. Append a StatPage to STAT_PAGES below.
  * 3. Fetch the new data in statsfm.fetchRotationData().
  */

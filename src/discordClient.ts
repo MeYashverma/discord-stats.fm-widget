@@ -26,7 +26,7 @@ export type PresenceLookup =
  * - keeps the bot online
  * - reads live Spotify presence for now-playing (instant track changes)
  *
- * Tops still come from stats.fm.
+ * Tops still come from Last.fm.
  *
  * Token source: DISCORD_BOT_TOKEN in .env — never hardcode or log it.
  *
