@@ -153,7 +153,7 @@ graph LR
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Loop as index.ts poll loop
+    participant App as index.ts poll loop
     participant Discord as discordClient.ts
     participant Lastfm as lastfm.ts
     participant Rotate as rotatingStats.ts
@@ -161,29 +161,33 @@ sequenceDiagram
     participant Widget as widgetUpdater.ts
     participant API as Discord API
 
-    Loop->>Discord: fetchDiscordSpotifyTrack()
-    Discord-->>Loop: CurrentTrack | idle | unavailable
-
-    alt presence unavailable
-        Loop->>Lastfm: fetchCurrentTrack()
-        Lastfm-->>Loop: Last.fm nowplaying or null
+    alt NOWPLAYING_SOURCE is lastfm
+        App->>Lastfm: fetchCurrentTrack()
+        Lastfm-->>App: now-playing track or null
+    else NOWPLAYING_SOURCE is discord or auto
+        App->>Discord: fetchDiscordSpotifyTrack()
+        Discord-->>App: track, idle, or unavailable
+        opt auto mode and presence unavailable
+            App->>Lastfm: fetchCurrentTrack()
+            Lastfm-->>App: fallback track or null
+        end
     end
 
-    Loop->>Lastfm: fetchRotationData() when stale
-    Lastfm-->>Loop: RotationData
-    Loop->>Rotate: buildRotatedTopStats(data, pageIndex)
-    Rotate-->>Loop: TopStats + page label
+    App->>Lastfm: fetchRotationData() when stale
+    Lastfm-->>App: RotationData
+    App->>Rotate: buildRotatedTopStats(data, pageIndex)
+    Rotate-->>App: TopStats and page label
 
-    Loop->>Widget: update(snapshot)
+    App->>Widget: update(snapshot)
     Widget->>Image: prepareHeroImage(track.heroImageUrl)
-    Image->>Image: download + correct + save PNG
-    Image->>API: POST webhook/channel upload
+    Image->>Image: download, correct, and save PNG
+    Image->>API: POST webhook or channel upload
     API-->>Image: CDN attachment URL
     Image-->>Widget: corrected album_art URL
     Widget->>Widget: build full dynamic payload
-    Widget->>API: PATCH /applications/{app}/users/{user}/identities/0/profile
-    API-->>Widget: 204 / 2xx
-    Widget-->>Loop: updated / unchanged / failed
+    Widget->>API: PATCH profile widget endpoint
+    API-->>Widget: 204 or 2xx
+    Widget-->>App: updated, unchanged, or failed
 ```
 
 ---
