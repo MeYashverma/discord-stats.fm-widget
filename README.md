@@ -1,4 +1,4 @@
-# 🎵 Discord Last.fm Profile Widget
+# 🎵 Vinyl.fm
 
 > **Cloud-hosted Last.fm + Discord Spotify Presence → Discord Dynamic Profile Widget.**
 > A single-user Discord bot that keeps your profile widget updated with live music, corrected album art, and rotating Last.fm stats — no VPS, no local PC, no frontend.
@@ -31,6 +31,8 @@ This repo runs a long-lived GitHub Actions job that:
 8. Exits cleanly before GitHub's 6-hour limit and queues the next run.
 
 It is designed for one Discord account and one Last.fm profile.
+
+> **Disclaimer:** Vinyl.fm is an independent personal widget project. It is not affiliated with Last.fm, Discord, Spotify, or stats.fm.
 
 ---
 
@@ -67,8 +69,8 @@ It is designed for one Discord account and one Last.fm profile.
 ### 1. Fork / clone
 
 ```bash
-git clone https://github.com/MeYashverma/discord-stats.fm-widget.git
-cd discord-stats.fm-widget
+git clone https://github.com/MeYashverma/discord-vinyl-fm-widget.git
+cd discord-vinyl-fm-widget
 npm install
 cp .env.example .env
 ```
@@ -98,7 +100,7 @@ npm start
 Add the same values as repository secrets, then open:
 
 ```text
-Actions → Update Last.fm Discord Widget → Run workflow
+Actions → Update Vinyl.fm Widget → Run workflow
 ```
 
 The workflow runs for about 5h50m, exits cleanly, then self-dispatches another run. A 6-hour cron is kept as a safety net.

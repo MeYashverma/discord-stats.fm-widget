@@ -29,7 +29,7 @@ export async function handleSlashCommand(
   try {
     if (name === "ping") {
       await interaction.reply({
-        content: "🏓 Last.fm widget is online!",
+        content: "🏓 Vinyl.fm is online!",
         ephemeral: true,
       });
       return;
@@ -38,7 +38,7 @@ export async function handleSlashCommand(
     if (name === "status") {
       const status = getRuntimeStatus();
       const body = [
-        "🎵 Last.fm widget",
+        "🎵 Vinyl.fm widget",
         "",
         `Bot: ${status.botOnline ? "Online" : "Offline"}`,
         `Widget: ${status.widgetActive ? "Active" : "Inactive"}`,

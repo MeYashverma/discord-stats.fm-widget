@@ -141,7 +141,7 @@ Optional repository variables:
 Open:
 
 ```text
-Actions → Update Last.fm Discord Widget → Run workflow
+Actions → Update Vinyl.fm Widget → Run workflow
 ```
 
 Expected healthy log lines:

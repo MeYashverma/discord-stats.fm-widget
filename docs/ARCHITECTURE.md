@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes how the Discord Last.fm Profile Widget daemon is structured, how one update cycle works, and why the project is intentionally designed as a single long-lived process.
+This document describes how the Vinyl.fm daemon is structured, how one update cycle works, and why the project is intentionally designed as a single long-lived process.
 
 ---
 

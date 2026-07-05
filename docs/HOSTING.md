@@ -107,7 +107,7 @@ For VPS/process-manager hosting:
 
 ```bash
 npm run build
-pm2 start dist/index.js --name lastfm-widget
+pm2 start dist/index.js --name vinyl-fm-widget
 pm2 save
 pm2 startup
 ```
@@ -139,7 +139,7 @@ The workflow uses concurrency:
 
 ```yaml
 concurrency:
-  group: lastfm-widget-daemon
+  group: vinyl-fm-widget-daemon
   cancel-in-progress: false
 ```
 
@@ -152,7 +152,7 @@ This prevents two runs from fighting over the same Discord widget and rate-limit
 Healthy startup:
 
 ```text
-Last.fm widget starting
+Vinyl.fm widget starting
 Logging into Discord…
 Discord bot is online
 Guild slash commands registered

@@ -1,4 +1,4 @@
-name: Update Last.fm Discord Widget
+name: Update Vinyl.fm Widget
 
 # Long-lived daemon for the Discord profile widget.
 # The app exits before GitHub Actions' 6-hour hard limit, then this workflow
@@ -16,7 +16,7 @@ permissions:
 
 # Prevent two runners from PATCHing the same Discord widget at the same time.
 concurrency:
-  group: lastfm-widget-daemon
+  group: vinyl-fm-widget-daemon
   cancel-in-progress: false
 
 jobs:

@@ -41,7 +41,7 @@ let presenceEverWorked = false;
 let lastPresenceTrack: CurrentTrack | null = null;
 
 /**
- * Last.fm widget — single-user Discord profile widget service.
+ * Vinyl.fm — single-user Discord profile widget service.
  *
  * - Now-playing: Discord Spotify presence (every poll / presence event)
  * - Bottom stats: Last.fm, optionally rotating pages every ROTATION_INTERVAL_SECONDS
@@ -268,7 +268,7 @@ async function runPollLoop(client: Client, updater: WidgetUpdater): Promise<void
 }
 
 async function main(): Promise<void> {
-  logger.info("Last.fm widget starting", {
+  logger.info("Vinyl.fm widget starting", {
     discordAppId: config.discordAppId,
     discordUserId: config.discordUserId,
     lastfmUsername: config.lastfmUsername,

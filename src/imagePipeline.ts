@@ -102,7 +102,7 @@ export class WidgetImagePipeline {
       maxContentLength: MAX_IMAGE_BYTES,
       headers: {
         Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "User-Agent": "lastfm-widget/1.0",
+        "User-Agent": "vinyl-fm-widget/1.0",
       },
       validateStatus: (status) => status >= 200 && status < 300,
     });
