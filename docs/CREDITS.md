@@ -4,18 +4,6 @@ This project builds on public Discord widget research, Last.fm API docs, and sev
 
 ---
 
-## Project references
-
-| Project | What it influenced |
-| --- | --- |
-| [Discord-Lyrically-Widget](https://github.com/MeYashverma/Discord-Lyrically-Widget) | GitHub Actions daemon hosting, webhook album-art hosting, D.W.I.F-style image fix, detailed hosting notes |
-| [Discord-LaunchPad-Widget](https://github.com/MeYashverma/Discord-LaunchPad-Widget) | Architecture documentation style, image-pipeline documentation, daemon lifecycle model |
-| [discord-lastfm-widget](https://github.com/MeYashverma/discord-lastfm-widget) | Last.fm widget automation and payload experiments |
-| [discord-waifu-widget](https://github.com/MeYashverma/discord-waifu-widget) | Discord widget automation experiments |
-| [Genshin-Stats](https://github.com/MeYashverma/Genshin-Stats) | Public README style, setup tables, API-flow documentation approach |
-
----
-
 ## External references
 
 | Reference | Link |
