@@ -12,11 +12,51 @@ The bot also sends `hero_image` for compatibility with older layouts.
 
 ---
 
+## Album-art failover (before the D.W.I.F transform)
+
+Before any shape-correction happens, `src/albumArtFailover.ts` makes sure there's a
+real cover to correct in the first place. This matters because the now-playing
+sources don't always have art:
+
+1. **The source's own art**, if it looks real. `isMissingOrPlaceholderArt()` in
+   `src/utils.ts` treats a URL as "no art" if it's empty, **or** if it's Last.fm's
+   own well-documented generic placeholder image (a specific "no cover" image hash,
+   `2a96cbd8b46e442fc41c2b86b821562f`, that Last.fm's API returns instead of an
+   empty value whenever a track genuinely has no cover — confirmed directly against
+   the live API; other projects like Navidrome special-case the same hash).
+2. **[iTunes Search API](https://performance-partners.apple.com/search-api)** — free,
+   no key or auth. Looked up by artist + track title, artwork upsized from the
+   default 100×100 to 600×600 via the documented filename-swap trick.
+3. **A static default image** — [`docs/default_album_art.png`](default_album_art.png),
+   served straight from this repo's raw GitHub content (works because the repo is
+   public) if nothing else has art either.
+
+This only runs — and only costs an extra HTTP request — when a track's own art is
+actually missing or is Last.fm's placeholder. Tracks with real art (Spotify presence
+art, or a genuine Last.fm cover) skip straight past it with no added latency. It also
+never touches the idle state: when nothing is playing, `heroImageUrl` intentionally
+stays empty so Discord shows the widget editor's Application Asset fallback
+(animated gif via `IDLE_IMAGE_URL`) — the failover only applies to tracks that are
+actually playing.
+
+If you'd rather use your own fallback image, replace `docs/default_album_art.png`
+with your own file (same name/path) or change `DEFAULT_ALBUM_ART_URL` in
+`src/albumArtFailover.ts`.
+
+---
+
 ## High-level flow
 
 ```mermaid
 flowchart TD
-    A[Spotify presence / Last.fm track] --> B[Source album-art URL]
+    A[Spotify presence / Last.fm track] --> A1[Source album-art URL]
+    A1 --> A2{Real art?}
+    A2 -->|empty or Last.fm placeholder| A3[iTunes Search API]
+    A3 --> A4{Found?}
+    A4 -->|yes| B[Album-art URL]
+    A4 -->|no| A5[Static default image]
+    A5 --> B
+    A2 -->|yes| B
     B --> C[Download image]
     C --> D[Resize to 512×512 RGBA]
     D --> E[Create transparent 512×512 canvas]
@@ -161,7 +201,10 @@ The image pipeline is non-fatal. Music text and stats should continue updating e
 
 | Failure | Fallback |
 | --- | --- |
-| Missing webhook/channel secret | Use direct album-art URL |
+| Source has no art at all | Try iTunes Search API |
+| Source returned Last.fm's generic placeholder image | Try iTunes Search API |
+| iTunes lookup also finds nothing | Use the static `docs/default_album_art.png` |
+| Missing webhook/channel secret | Use direct album-art URL (source, iTunes, or default) |
 | Image download fails | Use direct album-art URL |
 | Sharp decode fails | Use direct album-art URL |
 | Webhook upload fails | Use direct album-art URL |
